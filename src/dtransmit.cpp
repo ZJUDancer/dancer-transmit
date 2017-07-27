@@ -97,7 +97,7 @@ void DTransmit::addRawRecvFiltered(PORT port,
         if(error) {
             ROS_ERROR("Error in RosRecv: %s", error.message().c_str());
         } else if(m_recvFoo[port].remoteEndpoint.address().to_string() != remoteEndpoint) {
-            ROS_WARN("Someone else [%s] is broadcasting on this port [%d], packet filtered.", m_recvFoo[port].remoteEndpoint.address().to_string().c_str(), port);
+            // ROS_WARN("Someone else [%s] is broadcasting on this port [%d], packet filtered.", m_recvFoo[port].remoteEndpoint.address().to_string().c_str(), port);
         } else {
             callback(m_recvFoo[port].recvBuffer, bytesRecved);
         }
