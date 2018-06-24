@@ -21,6 +21,7 @@ include_directories(
 
  add_library(dtransmit
    src/dtransmit.cpp
+   src/dbroadcast.cpp
  )
 target_link_libraries(dtransmit ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -34,3 +35,12 @@ target_link_libraries(dtransmit ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #add_executable(test_send test/test_send.cpp)
 #target_link_libraries(test_send dtransmit)
+
+## Add gtest based cpp test target and link libraries
+if (CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(${PROJECT_NAME}_utest
+        test/utest.cpp)
+    target_link_libraries(${PROJECT_NAME}_utest
+        ${PROJECT_NAME}
+        ${catkin_LIBRARIES})
+endif ()
