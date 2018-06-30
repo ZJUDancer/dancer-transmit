@@ -41,7 +41,7 @@ class DTransmit {
    *
    * @param address - udp broadcast address
    */
-  explicit DTransmit(std::string address);
+  explicit DTransmit(std::string address="");
   /**
    * @brief DTransmit destructor
    */
@@ -132,8 +132,6 @@ class DTransmit {
    */
   void retrieveBroadcastAddress();
 
-  //! UDP broadcast address
-  std::string broadcast_address_;
   //! Broadcast addresses of all interfaces
   std::vector<std::string> broadcast_addresses_;
   //! IO service

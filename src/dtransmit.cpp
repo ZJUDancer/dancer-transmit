@@ -19,8 +19,12 @@ using namespace boost::asio;
 
 namespace dtransmit {
 DTransmit::DTransmit(string address)
-    : broadcast_address_(address), service_() {
-  retrieveBroadcastAddress();
+    : service_() {
+  if (!address.empty()) {
+    broadcast_addresses_.push_back(address);
+  } else {
+    retrieveBroadcastAddress();
+  }
   for (const auto &addr:broadcast_addresses_) {
     ROS_INFO("New DTransmit on %s", addr.c_str());
   }
@@ -77,8 +81,12 @@ void DTransmit::sendBuffer(boost::asio::ip::udp::socket *socket,
                            const void *buffer, std::size_t size) {
   boost::system::error_code ec;
   socket->send(boost::asio::buffer(buffer, size), 0, ec);
+
   if (ec) {
-    ROS_WARN("DTransmit can't send Ros buffer: %s", ec.message().c_str());
+    ROS_WARN("DTransmit can't send Ros buffer to %s:%d : %s",
+             socket->local_endpoint().address().to_string().c_str(),
+             socket->local_endpoint().port(),
+             ec.message().c_str());
   }
 }
 
@@ -94,7 +102,7 @@ void DTransmit::addRawRecv(PORT port,
   recv_foo_[port].readHandler = [=](const boost::system::error_code &error,
                                     std::size_t bytesRecved) {
     if (error) {
-      ROS_ERROR("Error in RosRecv: %s", error.message().c_str());
+      ROS_ERROR("Error in RawRecv: %s", error.message().c_str());
     } else {
       callback(recv_foo_[port].recvBuffer, bytesRecved);
     }

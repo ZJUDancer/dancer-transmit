@@ -7,7 +7,7 @@ using namespace std;
 
 int main()
 {
-    DTransmit d("192.168.255.255");
+    DTransmit d;
     int NUM = 2;
 
     int cnt = 0;
