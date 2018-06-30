@@ -11,79 +11,24 @@
  */
 
 #pragma once
+
 #include <ros/ros.h>
+
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <thread>
-#include <unordered_map>
 #include <vector>
+#include <utility>
+#include <map>
 
-// http://wiki.ros.org/roscpp/Overview/MessagesSerializationAndAdaptingTypes
-#define UDPBUFFERSIZE 65535
+#include "dtransmit/recv_socket.hpp"
 
 namespace dtransmit {
-
-typedef int PORT;
-
-// TODO maybe use pair
-/**
- * @brief Wrapper for socket transmition
- */
-struct Foo {
-  //! Socket instance
-  boost::asio::ip::udp::socket *socket;
-  //! handler for receiving messages.
-  std::function<void(const boost::system::error_code &, std::size_t)>
-      readHandler;
-  //! received buffer
-  uint8_t recvBuffer[UDPBUFFERSIZE];
-  //! remote endpoint address
-  boost::asio::ip::udp::endpoint remoteEndpoint;
-
-  /**
-   * @brief Foo constructor (blank)
-   */
-  Foo() {}
-
-  /**
-   * @brief Foo constructor
-   *
-   * Wrapper of socket to listen on specified IP with reusable port.
-   * https://stackoverflow.com/a/39665940
-   *
-   * @param service - io servise
-   * @param port - port
-   */
-  Foo(boost::asio::io_service &service, PORT port) {
-    // construct the socket
-    socket = new boost::asio::ip::udp::socket(service);
-
-    // open it
-    boost::asio::ip::udp::endpoint rx_endpoint_(boost::asio::ip::udp::v4(),
-                                                port);
-    boost::system::error_code error;
-    socket->open(rx_endpoint_.protocol(), error);
-    if (error) {
-      ROS_ERROR("Can't open recv socket");
-    } else {
-      // then set it for reuse and bind it
-      socket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
-      socket->bind(rx_endpoint_, error);
-      if (error) {
-        ROS_ERROR("Can't bind recv socket");
-      }
-    }
-  }
-
-  /**
-   * @brief Foo destructor
-   */
-  ~Foo() {}
-};
 
 /**
  * @brief Transmitting ROS messages and other information over UDP.
@@ -94,7 +39,7 @@ class DTransmit {
   /**
    * @brief DTransmit constructor.
    *
-   * @param address - udp boardcasting address
+   * @param address - udp broadcast address
    */
   explicit DTransmit(std::string address);
   /**
@@ -168,9 +113,10 @@ class DTransmit {
   /**
    * @brief Create socket for sending messages.
    *
-   * @param PORT - port for sending messages
+   * @param addr - broadcast address for sending messages
+   * @param port - port for sending messages
    */
-  void createSendSocket(PORT);
+  void createSendSocket(const std::string &addr, const PORT &port);
   /**
    * @brief Send buffer.
    *
@@ -181,17 +127,24 @@ class DTransmit {
   void sendBuffer(boost::asio::ip::udp::socket *, const void *buffer,
                   std::size_t size);
 
-  //! UDP boardcast address
+  /**
+   * @brief Retrieve for all interfaces the broadcast address
+   */
+  void retrieveBroadcastAddress();
+
+  //! UDP broadcast address
   std::string broadcast_address_;
+  //! Broadcast addresses of all interfaces
+  std::vector<std::string> broadcast_addresses_;
   //! IO service
   boost::asio::io_service service_;
 
   //! Thread instance
   std::thread thread_;
   //! Map of ports and corresponding Foo for receiving messages
-  std::unordered_map<PORT, Foo> recv_foo_;
+  std::map<PORT, Foo> recv_foo_;
   //! Map of ports and sockets for sending messages
-  std::unordered_map<PORT, boost::asio::ip::udp::socket *> send_sockets_;
+  std::map<std::pair<std::string, PORT>, boost::asio::ip::udp::socket *> send_sockets_;
 };
 
 template<typename ReadHandler>
@@ -207,6 +160,7 @@ template<typename ROSMSG>
 void DTransmit::addRosRecv(PORT port, std::function<void(ROSMSG &)> callback) {
   ROS_INFO("Add Ros Recv on port: %d", port);
   using namespace boost::asio;
+
   if (recv_foo_.count(port)) {
     ROS_ERROR("Error in addRosRecv: port %d exist!", port);
     return;
