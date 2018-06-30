@@ -7,7 +7,7 @@ using namespace dtransmit;
 using namespace std;
 int main()
 {
-    DTransmit d("127.0.0.1");
+    DTransmit d;
     int portBase = 26334;
 
     struct Foo {
