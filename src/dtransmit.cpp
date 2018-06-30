@@ -18,13 +18,26 @@ using namespace std;
 using namespace boost::asio;
 
 namespace dtransmit {
-DTransmit::DTransmit(string address)
+DTransmit::DTransmit(const std::string &address,
+                     const bool &use_local_loop)
     : service_() {
+  // add broadcast address
   if (!address.empty()) {
     broadcast_addresses_.push_back(address);
   } else {
     retrieveBroadcastAddress();
   }
+  // remove local loop 127.0.0.1 from broadcast address
+  if (!use_local_loop) {
+    broadcast_addresses_.erase(
+        std::remove_if(broadcast_addresses_.begin(),
+                       broadcast_addresses_.end(),
+                       [](const std::string &addr) {
+                         return addr == "127.0.0.1";
+                       }),
+        broadcast_addresses_.end());
+  }
+  // pirnt info
   for (const auto &addr:broadcast_addresses_) {
     ROS_INFO("New DTransmit on %s", addr.c_str());
   }

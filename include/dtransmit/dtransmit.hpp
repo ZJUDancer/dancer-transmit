@@ -41,7 +41,8 @@ class DTransmit {
    *
    * @param address - udp broadcast address
    */
-  explicit DTransmit(std::string address="");
+  explicit DTransmit(const std::string &address = "",
+                     const bool &use_local_loop = false);
   /**
    * @brief DTransmit destructor
    */
