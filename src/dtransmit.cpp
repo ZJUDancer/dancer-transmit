@@ -33,7 +33,7 @@ DTransmit::DTransmit(const std::string &address,
         std::remove_if(broadcast_addresses_.begin(),
                        broadcast_addresses_.end(),
                        [](const std::string &addr) {
-                         return addr == "127.0.0.1";
+                         return addr == "127.0.0.1" || addr.find("172.17.") != std::string::npos;
                        }),
         broadcast_addresses_.end());
   }
