@@ -12,19 +12,17 @@
 
 #pragma once
 
-#include <ros/ros.h>
-
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
-#include <vector>
 #include <utility>
-#include <map>
+#include <vector>
 
 #include "dtransmit/recv_socket.hpp"
 
@@ -34,7 +32,6 @@ namespace dtransmit {
  * @brief Transmitting ROS messages and other information over UDP.
  */
 class DTransmit {
-
  public:
   /**
    * @brief DTransmit constructor.
@@ -55,7 +52,7 @@ class DTransmit {
    * @param port - listening port
    * @param callback - callback function when receiving messages
    */
-  template<typename ROSMSG>
+  template <typename ROSMSG>
   void addRosRecv(PORT port, std::function<void(ROSMSG &)> callback);
 
   /**
@@ -65,7 +62,7 @@ class DTransmit {
    * @param port - sending port
    * @param ROSMSG - ROS message to send
    */
-  template<typename ROSMSG>
+  template <typename ROSMSG>
   void sendRos(PORT port, ROSMSG &);
 
   /**
@@ -109,7 +106,7 @@ class DTransmit {
    * @param port - port for receiving messages
    * @param handler - handler for reading sockets
    */
-  template<typename ReadHandler>
+  template <typename ReadHandler>
   void startRecv(PORT port, ReadHandler handler);
   /**
    * @brief Create socket for sending messages.
@@ -143,68 +140,70 @@ class DTransmit {
   //! Map of ports and corresponding Foo for receiving messages
   std::map<PORT, Foo> recv_foo_;
   //! Map of ports and sockets for sending messages
-  std::map<std::pair<std::string, PORT>, boost::asio::ip::udp::socket *> send_sockets_;
+  std::map<std::pair<std::string, PORT>, boost::asio::ip::udp::socket *>
+      send_sockets_;
 };
 
-template<typename ReadHandler>
+template <typename ReadHandler>
 void DTransmit::startRecv(PORT port, ReadHandler handler) {
   recv_foo_[port].socket->async_receive_from(
       boost::asio::buffer(
-          boost::asio::mutable_buffer((void *) &recv_foo_[port].recvBuffer,
+          boost::asio::mutable_buffer((void *)&recv_foo_[port].recvBuffer,
                                       sizeof(recv_foo_[port].recvBuffer))),
       recv_foo_[port].remoteEndpoint, handler);
 }
 
-template<typename ROSMSG>
+template <typename ROSMSG>
 void DTransmit::addRosRecv(PORT port, std::function<void(ROSMSG &)> callback) {
-  ROS_INFO("Add Ros Recv on port: %d", port);
+  std::cout << "Add Ros Recv on port: " << port;
   using namespace boost::asio;
 
-  if (recv_foo_.count(port)) {
-    ROS_ERROR("Error in addRosRecv: port %d exist!", port);
-    return;
-  }
-  recv_foo_[port] = Foo(service_, port);
+  // if (recv_foo_.count(port)) {
+  //   std::cerr << "Error in addRosRecv: port %d exist!" << port;
+  //   return;
+  // }
+  // recv_foo_[port] = Foo(service_, port);
 
-  recv_foo_[port].readHandler = [=](const boost::system::error_code &error,
-                                    std::size_t bytesRecved) {
-    if (error) {
-      ROS_ERROR("Error in RosRecv: %s", error.message().c_str());
-    } else {
-      try {
-        ROSMSG msg;
+  // recv_foo_[port].readHandler = [=](const boost::system::error_code &error,
+  //                                   std::size_t bytesRecved) {
+  //   if (error) {
+  //     std::cerr << "Error in RosRecv: " << error.message();
+  //   } else {
+  //     try {
+  //       ROSMSG msg;
 
-        ros::serialization::IStream stream((uint8_t *) recv_foo_[port].recvBuffer,
-                                           bytesRecved);
-        ros::serialization::Serializer<ROSMSG>::read(stream, msg);
-        // client callback
-        callback(msg);
-      } catch (std::exception &e) {
-        ROS_ERROR("%s", e.what());
-      }
-    }
+  //       ros::serialization::IStream stream(
+  //           (uint8_t *)recv_foo_[port].recvBuffer, bytesRecved);
+  //       ros::serialization::Serializer<ROSMSG>::read(stream, msg);
+  //       // client callback
+  //       callback(msg);
+  //     } catch (std::exception &e) {
+  //       std::cerr << e.what();
+  //     }
+  //   }
 
-    startRecv(port, recv_foo_[port].readHandler);
-  };
-  startRecv(port, recv_foo_[port].readHandler);
+  //   startRecv(port, recv_foo_[port].readHandler);
+  // };
+  // startRecv(port, recv_foo_[port].readHandler);
 }
 
-template<typename ROSMSG>
+template <typename ROSMSG>
 void DTransmit::sendRos(PORT port, ROSMSG &rosmsg) {
   try {
-    // serialize rosmsg
-    uint32_t serial_size = ros::serialization::serializationLength(rosmsg);
-    // std::unique_ptr<uint8_t> buffer(new uint8_t[serial_size]);
-    auto buffer = new uint8_t[serial_size];
+    // // serialize rosmsg
+    // uint32_t serial_size = ros::serialization::serializationLength(rosmsg);
+    // // std::unique_ptr<uint8_t> buffer(new uint8_t[serial_size]);
+    // auto buffer = new uint8_t[serial_size];
 
-    ros::serialization::OStream stream(buffer, serial_size);
-    ros::serialization::serialize(stream, rosmsg);
+    // ros::serialization::OStream stream(buffer, serial_size);
+    // ros::serialization::serialize(stream, rosmsg);
 
-    sendRaw(port, buffer, serial_size);
-    //!? leak memory on exception
-    delete[] buffer;
+    // sendRaw(port, buffer, serial_size);
+    // //!? leak memory on exception
+    // delete[] buffer;
+    std::cout<<"fuck"<<std::endl;
   } catch (std::exception &e) {
-    ROS_ERROR("%s", e.what());
+    std::cerr << e.what();
   }
 }
 

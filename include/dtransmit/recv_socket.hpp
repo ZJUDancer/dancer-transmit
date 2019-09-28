@@ -16,6 +16,8 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <iostream>
 
 // http://wiki.ros.org/roscpp/Overview/MessagesSerializationAndAdaptingTypes
 #define UDPBUFFERSIZE 65535
@@ -63,13 +65,13 @@ struct Foo {
     boost::system::error_code error;
     socket->open(rx_endpoint_.protocol(), error);
     if (error) {
-      ROS_ERROR("Can't open recv socket");
+      std::cerr << "Can't open recv socket";
     } else {
       // then set it for reuse and bind it
       socket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
       socket->bind(rx_endpoint_, error);
       if (error) {
-        ROS_ERROR("Can't bind recv socket");
+        std::cerr << "Can't bind recv socket";
       }
     }
   }
@@ -80,5 +82,4 @@ struct Foo {
   ~Foo() {}
 };
 
-} // namespace dtransmit
-
+}  // namespace dtransmit
