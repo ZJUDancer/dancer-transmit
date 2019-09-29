@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "dtransmit/recv_socket.hpp"
+#include <rmw/rmw.h>
 
 namespace dtransmit {
 
@@ -201,7 +202,16 @@ void DTransmit::sendRos(PORT port, ROSMSG &rosmsg) {
     // sendRaw(port, buffer, serial_size);
     // //!? leak memory on exception
     // delete[] buffer;
-    std::cout<<"fuck"<<std::endl;
+    rcl_serialized_message_t serialized_msg_ = rmw_get_zero_initialized_serialized_message();
+    auto allocator = rcutils_get_default_allocator();
+    auto initial_capacity = 0u;
+    auto ret = rmw_serialized_message_init(&serialized_msg_, initial_capacity,
+                                           &allocator);
+    if (ret != RCL_RET_OK) {
+      throw std::runtime_error("failed to initialize serialized message");
+    }
+
+    std::cout << "fuck" << std::endl;
   } catch (std::exception &e) {
     std::cerr << e.what();
   }

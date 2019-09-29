@@ -1,28 +1,26 @@
-#include <ros/ros.h>
-#include <std_msgs/String.h>
+#include <std_msgs/msg/string.hpp>
 #include "dtransmit/dtransmit.hpp"
 
 // TODO(MWX): test on different machine, over wifi
 using namespace dtransmit;
 using namespace std;
 
-int main()
-{
-    DTransmit d;
+int main() {
+  DTransmit d;
 
-    int NUM = 2;
+  int NUM = 2;
 
-    for(int i = 0 ; i < 1000; ++i) {
-        std_msgs::String msg;
-        std::stringstream ss;
-        ss << "Hello dtransmit " << i;
-        msg.data = ss.str();
+  for (int i = 0; i < 1000; ++i) {
+    std_msgs::msg::String msg;
+    std::stringstream ss;
+    ss << "Hello dtransmit " << i;
+    msg.data = ss.str();
 
-        ROS_INFO("Sending: [%s]", msg.data.c_str());
+    std::cout << "Sending: [" << msg.data << "]" << std::endl;
 
-        for(int j = 0; j < NUM; ++j) {
-            d.sendRos<std_msgs::String>(2000 + j, msg);
-        }
-        usleep(1000);
+    for (int j = 0; j < NUM; ++j) {
+      d.sendRos<std_msgs::msg::String>(2000 + j, msg);
     }
+    usleep(1000);
+  }
 }

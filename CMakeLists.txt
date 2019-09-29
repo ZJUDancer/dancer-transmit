@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(dtransmit)
-add_definitions(-std=c++11 -Wall -O2 -Wextra -Wno-unused-result) #-Wfloat-equal -Weffc++ -pedantic
+add_definitions(-std=c++14 -Wall -O2 -Wextra -Wno-unused-result) #-Wfloat-equal -Weffc++ -pedantic
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -20,7 +20,7 @@ target_link_libraries(dtransmit ${Boost_LIBRARIES})
 
 
 ## Add gtest based cpp test target and link libraries
-# if (CATKIN_ENABLE_TESTING)
+if (CATKIN_ENABLE_TESTING)
 #     catkin_add_gtest(${PROJECT_NAME}_utest
 #         test/utest.cpp)
 #     target_link_libraries(${PROJECT_NAME}_utest
@@ -33,8 +33,16 @@ target_link_libraries(dtransmit ${Boost_LIBRARIES})
 #     add_executable(test_recv test/test_recv.cpp)
 #     target_link_libraries(test_recv dtransmit)
 
-#     add_executable(test_send test/test_send.cpp)
-#     target_link_libraries(test_send dtransmit)
-# endif ()
+    add_executable(test_send test/test_send.cpp)
+    target_link_libraries(test_send dtransmit)
+endif ()
+
+add_executable(test_send test/test_send.cpp)
+target_link_libraries(test_send dtransmit)
+
+install(TARGETS
+  test_send
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()
