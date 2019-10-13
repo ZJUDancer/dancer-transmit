@@ -5,6 +5,11 @@ add_definitions(-std=c++14 -Wall -O2 -Wextra -Wno-unused-result) #-Wfloat-equal 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
+find_package(rclcpp_components REQUIRED)
+find_package(rcutils)
+find_package(rmw REQUIRED)
+find_package(std_msgs REQUIRED)
+
 find_package(Boost REQUIRED COMPONENTS system)
 
 include_directories(
@@ -16,6 +21,10 @@ add_library(dtransmit
   src/dtransmit.cpp
   )
 ament_target_dependencies(dtransmit rclcpp)
+ament_target_dependencies(dtransmit
+    rclcpp_components
+    rcutils
+    std_msgs)
 target_link_libraries(dtransmit ${Boost_LIBRARIES})
 
 
@@ -33,12 +42,15 @@ if (CATKIN_ENABLE_TESTING)
 #     add_executable(test_recv test/test_recv.cpp)
 #     target_link_libraries(test_recv dtransmit)
 
-    add_executable(test_send test/test_send.cpp)
-    target_link_libraries(test_send dtransmit)
+#     add_executable(test_send test/test_send.cpp)
+#     target_link_libraries(test_send dtransmit)
 endif ()
 
 add_executable(test_send test/test_send.cpp)
 target_link_libraries(test_send dtransmit)
+
+add_executable(test_recv test/test_recv.cpp)
+target_link_libraries(test_recv dtransmit)
 
 install(TARGETS
   test_send

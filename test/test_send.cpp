@@ -10,10 +10,10 @@ int main() {
 
   int NUM = 2;
 
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < 100; ++i) {
     std_msgs::msg::String msg;
     std::stringstream ss;
-    ss << "Hello dtransmit " << i;
+    ss << "Hello dtransmit " << std::to_string(i);
     msg.data = ss.str();
 
     std::cout << "Sending: [" << msg.data << "]" << std::endl;

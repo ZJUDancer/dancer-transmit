@@ -24,8 +24,9 @@
 #include <utility>
 #include <vector>
 
-#include "dtransmit/recv_socket.hpp"
 #include <rmw/rmw.h>
+#include <std_msgs/msg/string.hpp>
+#include "dtransmit/recv_socket.hpp"
 
 namespace dtransmit {
 
@@ -39,8 +40,7 @@ class DTransmit {
    *
    * @param address - udp broadcast address
    */
-  explicit DTransmit(const std::string &address = "",
-                     const bool &use_local_loop = false);
+  explicit DTransmit(const std::string &address = "", const bool &use_local_loop = false);
   /**
    * @brief DTransmit destructor
    */
@@ -123,8 +123,7 @@ class DTransmit {
    * @param buffer - buffer to send
    * @param size - size of buffer
    */
-  void sendBuffer(boost::asio::ip::udp::socket *, const void *buffer,
-                  std::size_t size);
+  void sendBuffer(boost::asio::ip::udp::socket *, const void *buffer, std::size_t size);
 
   /**
    * @brief Retrieve for all interfaces the broadcast address
@@ -141,16 +140,14 @@ class DTransmit {
   //! Map of ports and corresponding Foo for receiving messages
   std::map<PORT, Foo> recv_foo_;
   //! Map of ports and sockets for sending messages
-  std::map<std::pair<std::string, PORT>, boost::asio::ip::udp::socket *>
-      send_sockets_;
+  std::map<std::pair<std::string, PORT>, boost::asio::ip::udp::socket *> send_sockets_;
 };
 
 template <typename ReadHandler>
 void DTransmit::startRecv(PORT port, ReadHandler handler) {
   recv_foo_[port].socket->async_receive_from(
-      boost::asio::buffer(
-          boost::asio::mutable_buffer((void *)&recv_foo_[port].recvBuffer,
-                                      sizeof(recv_foo_[port].recvBuffer))),
+      boost::asio::buffer(boost::asio::mutable_buffer((void *)&recv_foo_[port].recvBuffer,
+                                                      sizeof(recv_foo_[port].recvBuffer))),
       recv_foo_[port].remoteEndpoint, handler);
 }
 
@@ -159,59 +156,90 @@ void DTransmit::addRosRecv(PORT port, std::function<void(ROSMSG &)> callback) {
   std::cout << "Add Ros Recv on port: " << port;
   using namespace boost::asio;
 
-  // if (recv_foo_.count(port)) {
-  //   std::cerr << "Error in addRosRecv: port %d exist!" << port;
-  //   return;
-  // }
-  // recv_foo_[port] = Foo(service_, port);
+  if (recv_foo_.count(port)) {
+    std::cerr << "Error in addRosRecv: port %d exist!" << port;
+    return;
+  }
+  recv_foo_[port] = Foo(service_, port);
 
-  // recv_foo_[port].readHandler = [=](const boost::system::error_code &error,
-  //                                   std::size_t bytesRecved) {
-  //   if (error) {
-  //     std::cerr << "Error in RosRecv: " << error.message();
-  //   } else {
-  //     try {
-  //       ROSMSG msg;
+  recv_foo_[port].readHandler = [=](const boost::system::error_code &error,
+                                    std::size_t bytesRecved) {
+    if (error) {
+      std::cerr << "Error in RosRecv: " << error.message();
+    } else {
+      try {
+        ROSMSG msg;
 
-  //       ros::serialization::IStream stream(
-  //           (uint8_t *)recv_foo_[port].recvBuffer, bytesRecved);
-  //       ros::serialization::Serializer<ROSMSG>::read(stream, msg);
-  //       // client callback
-  //       callback(msg);
-  //     } catch (std::exception &e) {
-  //       std::cerr << e.what();
-  //     }
-  //   }
+        // Init aserialized message
+        rcl_serialized_message_t serialized_msg_ = rmw_get_zero_initialized_serialized_message();
+        auto allocator = rcutils_get_default_allocator();
+        auto initial_capacity = 8u;
+        auto ret = rmw_serialized_message_init(&serialized_msg_, initial_capacity, &allocator);
+        if (ret != RCL_RET_OK) {
+          throw std::runtime_error("failed to initialize serialized message");
+        }
 
-  //   startRecv(port, recv_foo_[port].readHandler);
-  // };
-  // startRecv(port, recv_foo_[port].readHandler);
+        ret = rmw_serialized_message_resize(&serialized_msg_, bytesRecved);
+        if (ret != RCL_RET_OK) {
+          throw std::runtime_error("failed to resize serialized message");
+        }
+        // Get msg content from buffer
+        memcpy((void *)serialized_msg_.buffer, (void *)recv_foo_[port].recvBuffer, bytesRecved);
+        serialized_msg_.buffer_length = bytesRecved;
+
+        auto string_ts =
+            rosidl_typesupport_cpp::get_message_type_support_handle<ROSMSG>();
+
+        // Deserialize message into ros msg
+        ret = rmw_deserialize(&serialized_msg_, string_ts, &msg);
+        if (ret != RMW_RET_OK) {
+          fprintf(stderr, "failed to deserialize serialized message\n");
+          return;
+        }
+        // // client callback
+        callback(msg);
+      } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
+      }
+    }
+
+    startRecv(port, recv_foo_[port].readHandler);
+  };
+  startRecv(port, recv_foo_[port].readHandler);
 }
 
 template <typename ROSMSG>
 void DTransmit::sendRos(PORT port, ROSMSG &rosmsg) {
   try {
-    // // serialize rosmsg
-    // uint32_t serial_size = ros::serialization::serializationLength(rosmsg);
-    // // std::unique_ptr<uint8_t> buffer(new uint8_t[serial_size]);
-    // auto buffer = new uint8_t[serial_size];
-
-    // ros::serialization::OStream stream(buffer, serial_size);
-    // ros::serialization::serialize(stream, rosmsg);
-
-    // sendRaw(port, buffer, serial_size);
-    // //!? leak memory on exception
-    // delete[] buffer;
+    // Init empty serialize message
     rcl_serialized_message_t serialized_msg_ = rmw_get_zero_initialized_serialized_message();
     auto allocator = rcutils_get_default_allocator();
     auto initial_capacity = 0u;
-    auto ret = rmw_serialized_message_init(&serialized_msg_, initial_capacity,
-                                           &allocator);
+    auto ret = rmw_serialized_message_init(&serialized_msg_, initial_capacity, &allocator);
     if (ret != RCL_RET_OK) {
       throw std::runtime_error("failed to initialize serialized message");
     }
 
-    std::cout << "fuck" << std::endl;
+    auto message_header_length = 8u;
+    auto message_payload_length = static_cast<size_t>(rosmsg.data.size());
+    ret = rmw_serialized_message_resize(&serialized_msg_,
+                                        message_header_length + message_payload_length);
+    if (ret != RCL_RET_OK) {
+      throw std::runtime_error("failed to resize serialized message");
+    }
+
+    // serialize rosmsg
+    auto string_ts =
+        rosidl_typesupport_cpp::get_message_type_support_handle<ROSMSG>();
+    // Given the correct typesupport, we can convert our ROS2 message into
+    // its binary representation (serialized_msg)
+    ret = rmw_serialize(&rosmsg, string_ts, &serialized_msg_);
+    if (ret != RMW_RET_OK) {
+      fprintf(stderr, "failed to serialize serialized message\n");
+      return;
+    }
+    sendRaw(port, serialized_msg_.buffer, serialized_msg_.buffer_length);
+
   } catch (std::exception &e) {
     std::cerr << e.what();
   }
