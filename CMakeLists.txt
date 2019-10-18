@@ -27,6 +27,12 @@ ament_target_dependencies(dtransmit
     std_msgs)
 target_link_libraries(dtransmit ${Boost_LIBRARIES})
 
+ament_export_include_directories(include)
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
 
 ## Add gtest based cpp test target and link libraries
 if (CATKIN_ENABLE_TESTING)
