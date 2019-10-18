@@ -220,10 +220,10 @@ void DTransmit::sendRos(PORT port, ROSMSG &rosmsg) {
       throw std::runtime_error("failed to initialize serialized message");
     }
 
-    auto message_header_length = 8u;
-    auto message_payload_length = static_cast<size_t>(rosmsg.data.size());
-    ret = rmw_serialized_message_resize(&serialized_msg_,
-                                        message_header_length + message_payload_length);
+    // auto message_header_length = 8u;
+    // auto message_payload_length = static_cast<size_t>(rosmsg.data.size());
+    // ret = rmw_serialized_message_resize(&serialized_msg_,
+    //                                     message_header_length + message_payload_length);
     if (ret != RCL_RET_OK) {
       throw std::runtime_error("failed to resize serialized message");
     }
