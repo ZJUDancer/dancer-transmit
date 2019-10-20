@@ -27,6 +27,13 @@ ament_target_dependencies(dtransmit
     std_msgs)
 target_link_libraries(dtransmit ${Boost_LIBRARIES})
 
+ament_export_libraries(${PROJECT_NAME})
+install(
+  TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
+
 ament_export_include_directories(include)
 install(
   DIRECTORY include/
